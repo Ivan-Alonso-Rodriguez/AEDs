@@ -1,0 +1,349 @@
+#include <iostream>
+#include <algorithm>
+#include <vector>
+using namespace std;
+
+// Nodo del arbol AVL
+struct TreeNode {
+    int key;
+    int count; // cuantas veces se ha insertado esta clave
+    int bal; // factor de balance: -1, 0, +1
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int k) : key(k), count(1), bal(0), left(nullptr), right(nullptr) {}
+};
+
+class AVLTree {
+private:
+    TreeNode* root;
+
+    void rotateLeft(TreeNode*& node) {
+        cout << "Rotacion simple izquierda en clave " << node->key << endl;
+        TreeNode* r = node->right;
+        node->right = r->left;
+        r->left = node;
+        node->bal = 0;
+        r->bal = 0;
+        node = r;
+    }
+
+    void rotateRight(TreeNode*& node) {
+        cout << "Rotacion simple derecha en clave " << node->key << endl;
+        TreeNode* l = node->left;
+        node->left = l->right;
+        l->right = node;
+        node->bal = 0;
+        l->bal = 0;
+        node = l;
+    }
+
+    void rotateLeftRight(TreeNode*& node) {
+        cout << "Rotacion doble izquierda-derecha en clave " << node->key << endl;
+        rotateLeft(node->left);
+        rotateRight(node);
+    }
+
+    void rotateRightLeft(TreeNode*& node) {
+        cout << "Rotacion doble derecha-izquierda en clave " << node->key << endl;
+        rotateRight(node->right);
+        rotateLeft(node);
+    }
+
+    void insert(int key, TreeNode*& node, bool& h) {
+        if (!node) {
+            node = new TreeNode(key);
+            h = true;
+        } else if (key == node->key) {
+            node->count++;
+            h = false;
+        } else if (key < node->key) {
+            insert(key, node->left, h);
+            if (h) {
+                switch (node->bal) {
+                    case -1: node->bal = 0; h = false; break;
+                    case  0: node->bal = +1; break;
+                    case +1:
+                        if (node->left->bal == +1)
+                            rotateRight(node);
+                        else
+                            rotateLeftRight(node);
+                        h = false;
+                }
+            }
+        } else {
+            insert(key, node->right, h);
+            if (h) {
+                switch (node->bal) {
+                    case +1: node->bal = 0; h = false; break;
+                    case  0: node->bal = -1; break;
+                    case -1:
+                        if (node->right->bal == -1)
+                            rotateLeft(node);
+                        else
+                            rotateRightLeft(node);
+                        h = false;
+                }
+            }
+        }
+    }
+
+    // Elimina el nodo con la clave minima en el subarbol derecho
+    void deleteMin(TreeNode*& q, TreeNode*& r, bool& h) {
+        if (r->left) {
+            deleteMin(q, r->left, h);
+            if (h) balanceLeft(r, h);
+        } else {
+            q->key = r->key;
+            q->count = r->count;
+            TreeNode* temp = r;
+            r = r->right;
+            delete temp;
+            h = true;
+        }
+    }
+
+    //Rebalancea el nodo si su subarbol izquierdo disminuyo de altura
+    void balanceLeft(TreeNode*& node, bool& h) {
+        switch (node->bal) {
+            case +1: node->bal = 0; break;
+            case 0: node->bal = -1; h = false; break;
+            case -1: {
+                TreeNode* r = node->right;
+                if (r->bal <= 0) {
+                    rotateLeft(node);
+                    if (r->bal == 0) {
+                        node->bal = +1;
+                        r->bal = -1;
+                        h = false;
+                    }
+                } else {
+                    rotateRightLeft(node);
+                }
+                break;
+            }
+        }
+    }
+
+    // Rebalancea el nodo si su subarbol derecho disminuyo de altura
+    void balanceRight(TreeNode*& node, bool& h) {
+        switch (node->bal) {
+            case -1: node->bal = 0; break;
+            case 0: node->bal = +1; h = false; break;
+            case +1: {
+                TreeNode* l = node->left;
+                if (l->bal >= 0) {
+                    rotateRight(node);
+                    if (l->bal == 0) {
+                        node->bal = -1;
+                        l->bal = +1;
+                        h = false;
+                    }
+                } else {
+                    rotateLeftRight(node);
+                }
+                break;
+            }
+        }
+    }
+
+    void remove(int key, TreeNode*& node, bool& h) {
+        if (!node) return;
+
+        if (key < node->key) {
+            remove(key, node->left, h);
+            if (h) balanceLeft(node, h);
+        } else if (key > node->key) {
+            remove(key, node->right, h);
+            if (h) balanceRight(node, h);
+        } else {
+            if (node->count > 1) {
+                node->count--;
+                h = false;
+                return;
+            }
+
+            TreeNode* q = node;
+            if (!q->right) {
+                node = q->left;
+                delete q;
+                h = true;
+            } else if (!q->left) {
+                node = q->right;
+                delete q;
+                h = true;
+            } else {
+                deleteMin(q, q->right, h);
+                if (h) balanceRight(node, h);
+            }
+        }
+    }
+
+    void inorder(TreeNode* node) {
+        if (node) {
+            inorder(node->left);
+            cout << "Clave: " << node->key << " | Count: " << node->count << " | Balance: " << node->bal << endl;
+            inorder(node->right);
+        }
+    }
+
+    int computeHeight(TreeNode* node) {
+        if (!node) return 0;
+        return 1 + max(computeHeight(node->left), computeHeight(node->right));
+    }
+
+
+    TreeNode* findNode(TreeNode* node, int key) {
+        if (!node) return nullptr;
+        if (key == node->key) return node; // Si encuentra la llave devuelve el nodo
+        if (key < node->key) return findNode(node->left, key); // Si la clave es menor, busca a la izquierda
+        return findNode(node->right, key); // Si la clave es mayo, busca a la derecha
+    }
+    // Para obtener el size
+    int countNodes(TreeNode* node) {
+        if (!node) return 0;
+        return node->count + countNodes(node->left) + countNodes(node->right);
+    }
+
+public:
+    AVLTree() : root(nullptr) {}
+
+    void insert(int key) {
+        bool h = false;
+        insert(key, root, h);
+    }
+
+    void remove(int key) {
+        bool h = false;
+        remove(key, root, h);
+    }
+
+    void printInorder() {
+        cout << "\nRecorrido inorden del arbol AVL:\n";
+        inorder(root);
+    }
+
+    int height() {
+        return computeHeight(root);
+    }
+
+    int heightOfKey(int key) {
+        TreeNode* node = findNode(root, key);
+        if (!node) {
+            cout << "Clave no encontrada.\n";
+            return -1;
+        }
+        return computeHeight(node);
+    }
+
+    // Verifica si el arbol es AVL (factor de balance entre -1 y 1)
+    bool isAVL() {
+        return isAVL(root).first;
+    }
+
+    pair<bool, int> isAVL(TreeNode* node) {
+        if (!node) return {true, 0};
+        auto left = isAVL(node->left);
+        auto right = isAVL(node->right);
+        bool balanced = left.first && right.first && abs(left.second - right.second) <= 1;
+        return {balanced, 1 + max(left.second, right.second)};
+    }
+
+    // Devuelve la clave minima del arbol
+    int getMin() {
+        if (!root) {
+            cout << "El arbol esta vacio.\n";
+            return -1;
+        }
+        TreeNode* temp = root;
+        while (temp->left) temp = temp->left;
+        return temp->key;
+    }
+
+    // Devuelve la clave maxima del arbol
+    int getMax() {
+        if (!root) {
+            cout << "El arbol esta vacio.\n";
+            return -1;
+        }
+        TreeNode* temp = root;
+        while (temp->right) temp = temp->right;
+        return temp->key;
+    }
+
+    // Devuelve la cantidad total de claves (sumando count)
+    int size() {
+        return countNodes(root);
+    }
+
+    // USO EN MAIN()
+    // cout << "El arbol es AVL? " << (tree.isAVL() ? "Si" : "No") << endl;
+    // cout << "Minimo: " << tree.getMin() << endl;
+    // cout << "Maximo: " << tree.getMax() << endl;
+    // cout << "Cantidad total de claves (count): " << tree.size() << endl;
+
+};
+
+// Genera una secuencia de insercion balanceada sin rotaciones
+void buildPerfectAVL(const vector<int>& nums, int l, int r, vector<int>& res) {
+    if (l > r) return;
+    int mid = (l + r) / 2;
+    res.push_back(nums[mid]);
+    buildPerfectAVL(nums, l, mid - 1, res);
+    buildPerfectAVL(nums, mid + 1, r, res);
+}
+
+vector<int> generateAVLInsertionSequence(vector<int> array) {
+    sort(array.begin(), array.end());
+    vector<int> res;
+    buildPerfectAVL(array, 0, array.size() - 1, res);
+    return res;
+}
+
+
+
+// Funcion principal
+int main() {
+    AVLTree tree;
+
+    int datos[] = {40, 20, 60, 10, 30, 50, 70, 20, 30, 30};
+    for (int x : datos) {
+        cout << "Insertando " << x << "...\n";
+        tree.insert(x);
+    }
+
+    tree.printInorder();
+    cout << "\nAltura del arbol completo: " << tree.height() << endl;
+
+    // Altura de claves especificas
+    cout << "\nAltura del nodo 20: " << tree.heightOfKey(20) << endl;
+    cout << "Altura del nodo 30: " << tree.heightOfKey(30) << endl;
+    cout << "Altura del nodo 99: " << tree.heightOfKey(99) << endl;
+
+    // Eliminaciones
+    cout << "\nEliminando 30 (decrementa count)...\n";
+    tree.remove(30);
+    tree.printInorder();
+    cout << "Altura nodo 30: " << tree.heightOfKey(30) << endl;
+
+    cout << "\nEliminando 30 (decrementa count)...\n";
+    tree.remove(30);
+    tree.printInorder();
+
+    cout << "\nEliminando 30 (elimina nodo)...\n";
+    tree.remove(30);
+    tree.printInorder();
+    cout << "Altura nodo 30: " << tree.heightOfKey(30) << endl;
+
+
+    // Un arbol con secuencia sin rotaciones
+    vector<int> input = {2, 4, 1, 3, 5, 6, 7};
+    vector<int> result = generateAVLInsertionSequence(input);
+
+    cout << "Secuencia sin rotaciones:\n[";
+    for (size_t i = 0; i < result.size(); ++i) {
+        cout << result[i] << (i + 1 < result.size() ? ", " : "");
+    }
+    cout << "]"<<endl;
+
+    return 0;
+}
