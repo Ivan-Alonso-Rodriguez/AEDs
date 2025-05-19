@@ -81,6 +81,49 @@ void levelOrder(Node* root) {
         if (current->right) q.push(current->right);
     }
 }
+// Elimina un nodo con un valor específico del BST
+Node* deleteNode(Node* root, int key) {
+    if (root == nullptr) return nullptr;
+
+    if (key < root->data) {
+        root->left = deleteNode(root->left, key);
+    } else if (key > root->data) {
+        root->right = deleteNode(root->right, key);
+    } else {
+        // Caso 1: Sin hijos (hoja)
+        if (root->left == nullptr && root->right == nullptr) {
+            delete root;
+            return nullptr;
+        }
+        // Caso 2: Un solo hijo
+        else if (root->left == nullptr) {
+            Node* temp = root->right;
+            delete root;
+            return temp;
+        }
+        else if (root->right == nullptr) {
+            Node* temp = root->left;
+            delete root;
+            return temp;
+        }
+        // Caso 3: Dos hijos
+        else {
+            // Encontrar el sucesor inorden (mínimo en el subárbol derecho)
+            Node* successor = root->right;
+            while (successor->left != nullptr) {
+                successor = successor->left;
+            }
+
+            // Reemplazar el valor del nodo actual con el del sucesor
+            root->data = successor->data;
+
+            // Eliminar el sucesor
+            root->right = deleteNode(root->right, successor->data);
+        }
+    }
+
+    return root;
+}
 
 // Inorden que llena un vector con los datos
 void inorderTraversal(Node* root, vector<int>& result) {
