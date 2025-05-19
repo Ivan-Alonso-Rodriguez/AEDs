@@ -1,0 +1,92 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+
+using namespace std;
+
+// Definición del nodo del árbol
+struct Node {
+    int data;
+    Node* left;
+    Node* right;
+
+    Node(int value) {
+        data = value;
+        left = nullptr;
+        right = nullptr;
+    }
+};
+
+// Inserta un valor en el BST
+Node* insert(Node* root, int value) {
+    if (root == nullptr) return new Node(value);
+
+    if (value < root->data)
+        root->left = insert(root->left, value);
+    else if (value > root->data)
+        root->right = insert(root->right, value);
+
+    return root;
+}
+
+// Busca un valor en el BST
+bool search(Node* root, int value) {
+    if (root == nullptr) return false;
+
+    if (root->data == value) return true;
+    else if (value < root->data) return search(root->left, value);
+    else return search(root->right, value);
+}
+
+// Recorrido inorden (izquierda, raíz, derecha)
+void inorder(Node* root) {
+    if (root != nullptr) {
+        inorder(root->left);
+        cout << root->data << " ";
+        inorder(root->right);
+    }
+}
+
+// Recorrido preorden (raíz, izquierda, derecha)
+void preorder(Node* root) {
+    if (root != nullptr) {
+        cout << root->data << " ";
+        preorder(root->left);
+        preorder(root->right);
+    }
+}
+
+// Recorrido postorden (izquierda, derecha, raíz)
+void postorder(Node* root) {
+    if (root != nullptr) {
+        postorder(root->left);
+        postorder(root->right);
+        cout << root->data << " ";
+    }
+}
+
+// Recorrido por niveles (BFS)
+void levelOrder(Node* root) {
+    if (root == nullptr) return;
+
+    queue<Node*> q;
+    q.push(root);
+
+    while (!q.empty()) {
+        Node* current = q.front();
+        q.pop();
+        cout << current->data << " ";
+
+        if (current->left) q.push(current->left);
+        if (current->right) q.push(current->right);
+    }
+}
+
+// Inorden que llena un vector con los datos
+void inorderTraversal(Node* root, vector<int>& result) {
+    if (root == nullptr) return;
+
+    inorderTraversal(root->left, result);
+    result.push_back(root->data);
+    inorderTraversal(root->right, result);
+}
