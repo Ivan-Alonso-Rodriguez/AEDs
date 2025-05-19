@@ -90,3 +90,36 @@ void inorderTraversal(Node* root, vector<int>& result) {
     result.push_back(root->data);
     inorderTraversal(root->right, result);
 }
+int main() {
+    Node* root = nullptr;
+    vector<int> inordenVec;
+
+    // Insertar nodos
+    root = insert(root, 50);
+    insert(root, 30);
+    insert(root, 70);
+    insert(root, 20);
+    insert(root, 40);
+    insert(root, 60);
+    insert(root, 80);
+
+    cout << "Inorden: ";
+    inorder(root);
+    cout << "\nPreorden: ";
+    preorder(root);
+    cout << "\nPostorden: ";
+    postorder(root);
+    cout << "\nLevel Order: ";
+    levelOrder(root);
+
+    cout << "\n\nLlenar vector con inorden: ";
+    inorderTraversal(root, inordenVec);
+    for (int val : inordenVec) {
+        cout << val << " ";
+    }
+
+    cout << "\nBuscar 40: " << (search(root, 40) ? "Sí" : "No") << endl;
+    cout << "Buscar 100: " << (search(root, 100) ? "Sí" : "No") << endl;
+
+    return 0;
+}
